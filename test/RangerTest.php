@@ -10,6 +10,7 @@ namespace OpenPsa\Ranger;
 use IntlDateFormatter;
 use DateTime;
 use DateTimeImmutable;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 class RangerTest extends TestCase
@@ -17,6 +18,7 @@ class RangerTest extends TestCase
     /**
      * @dataProvider providerDateRange
      */
+    #[DataProvider('providerDateRange')]
     public function testDateRange($language, $start, $end, $expected)
     {
         $formatter = new Ranger($language);
@@ -38,6 +40,7 @@ class RangerTest extends TestCase
     /**
      * @dataProvider providerDateTimeRange
      */
+    #[DataProvider('providerDateTimeRange')]
     public function testDateTimeRange($language, $start, $end, $expected)
     {
         $formatter = new Ranger($language);
@@ -67,6 +70,7 @@ class RangerTest extends TestCase
     /**
      * @dataProvider providerFullDateRange
      */
+    #[DataProvider('providerFullDateRange')]
     public function testFullDateRange($language, $start, $end, $expected)
     {
         $formatter = new Ranger($language);
@@ -89,6 +93,7 @@ class RangerTest extends TestCase
     /**
      * @dataProvider providerShortDateRange
      */
+    #[DataProvider('providerShortDateRange')]
     public function testShortDateRange($language, $start, $end, $expected)
     {
         $formatter = new Ranger($language);
@@ -199,6 +204,7 @@ class RangerTest extends TestCase
     /**
      * @dataProvider providerNoDate
      */
+    #[DataProvider('providerNoDate')]
     public function testNoDate($language, $start, $end, $expected)
     {
         $formatter = new Ranger($language);
