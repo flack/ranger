@@ -11,10 +11,10 @@
         }
     ],
     "require": {
-        "php": ">=7.0",
-        "symfony/intl": "~2.6|~3.4|~4.0|~5.0|~6.0|~7.0|~8.0"
+        "php": ">=7.0"
     },
     "suggest": {
+        "symfony/intl": "Optional PHP alternative to ext-intl",
         "ext-intl": "Needed for usage with other locales than 'en'"
     },
     "autoload": {
