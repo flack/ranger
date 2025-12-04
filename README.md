@@ -28,7 +28,7 @@ echo $ranger->format('2013-10-05', '2013-11-20');
 
 ## Usage
 
-To use Ranger in any other locale than `"en"`, you will need to have the [`php-intl`](http://php.net/manual/en/book.intl.php) extension installed.
+To use Ranger, you will need to have the [`php-intl`](http://php.net/manual/en/book.intl.php) extension installed. If the you only need it to work in the `"en"`  locale, you can alternatively require [`symfony/intl`](https://github.com/symfony/intl) in your `composer.json`.
 
 Instantiate ranger with the name of your locale as the parameter. You can also pass `null` to use the `ini.default_locale` setting. Afterwards, you can call `format()` with two date parameters. Accepted types are
 
