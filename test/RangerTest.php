@@ -302,8 +302,8 @@ class RangerTest extends TestCase
     {
         $r = new Ranger('zh_TW');
         $r
-        ->setDateType(IntlDateFormatter::MEDIUM)
-        ->setTimeType(IntlDateFormatter::SHORT);
+            ->setDateType(IntlDateFormatter::MEDIUM)
+            ->setTimeType(IntlDateFormatter::SHORT);
 
         if (version_compare(INTL_ICU_VERSION, '70.1', '<')) {
             $day_period = '下午';
@@ -311,5 +311,14 @@ class RangerTest extends TestCase
             $day_period = '晚上';
         }
         $this->assertEquals('2024年3月29日, ' . $day_period . '7:00 – 2024年3月30日, ' . $day_period . '8:00', $r->format(1711738800, 1711828800));
+    }
+
+    public function testIssue19()
+    {
+        $r = new Ranger('nb');
+        $r
+            ->setDateType(IntlDateFormatter::LONG)
+            ->setTimeType(IntlDateFormatter::NONE);
+        $this->assertEquals('22.–29. september 2026', $r->format('2026-09-22', '2026-09-29'));
     }
 }
