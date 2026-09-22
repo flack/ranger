@@ -21,8 +21,8 @@ class RangerTest extends TestCase
     #[DataProvider('providerDateRange')]
     public function testDateRange($language, $start, $end, $expected)
     {
-        $formatter = new Ranger($language);
-        $this->assertEquals($expected, $formatter->format($start, $end));
+        $ranger = new Ranger($language);
+        $this->assertEquals($expected, $ranger->format($start, $end));
     }
 
     public static function providerDateRange()
@@ -43,9 +43,10 @@ class RangerTest extends TestCase
     #[DataProvider('providerDateTimeRange')]
     public function testDateTimeRange($language, $start, $end, $expected)
     {
-        $formatter = new Ranger($language);
-        $formatter->setTimeType(IntlDateFormatter::SHORT);
-        $this->assertEquals($expected, $formatter->format($start, $end));
+        $ranger = (new Ranger($language))
+            ->setTimeType(IntlDateFormatter::SHORT);
+
+        $this->assertEquals($expected, $ranger->format($start, $end));
     }
 
     private static function get_space() : string
@@ -73,9 +74,10 @@ class RangerTest extends TestCase
     #[DataProvider('providerFullDateRange')]
     public function testFullDateRange($language, $start, $end, $expected)
     {
-        $formatter = new Ranger($language);
-        $formatter->setDateType(IntlDateFormatter::FULL);
-        $this->assertEquals($expected, $formatter->format($start, $end));
+        $ranger = (new Ranger($language))
+            ->setDateType(IntlDateFormatter::FULL);
+
+        $this->assertEquals($expected, $ranger->format($start, $end));
     }
 
     public static function providerFullDateRange()
@@ -96,9 +98,10 @@ class RangerTest extends TestCase
     #[DataProvider('providerShortDateRange')]
     public function testShortDateRange($language, $start, $end, $expected)
     {
-        $formatter = new Ranger($language);
-        $formatter->setDateType(IntlDateFormatter::SHORT);
-        $this->assertEquals($expected, $formatter->format($start, $end));
+        $ranger = (new Ranger($language))
+            ->setDateType(IntlDateFormatter::SHORT);
+
+        $this->assertEquals($expected, $ranger->format($start, $end));
     }
 
     public static function providerShortDateRange()
@@ -116,57 +119,49 @@ class RangerTest extends TestCase
 
     public function testCustomOptions()
     {
-        $ranger = new Ranger('en');
-        $ranger
+        $result = (new Ranger('en'))
             ->setRangeSeparator(' -- ')
             ->setDateTimeSeparator(': ')
             ->setDateType(IntlDateFormatter::LONG)
-            ->setTimeType(IntlDateFormatter::SHORT);
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format('2013-10-05 10:00:01', '2013-10-05 13:30:00');
 
-        $formatted = $ranger->format('2013-10-05 10:00:01', '2013-10-05 13:30:00');
         $space = self::get_space();
-        $this->assertEquals('October 5, 2013: 10:00' . $space . 'AM -- 1:30' . $space . 'PM', $formatted);
+        $this->assertEquals('October 5, 2013: 10:00' . $space . 'AM -- 1:30' . $space . 'PM', $result);
     }
 
     public function testEscapeCharParsing()
     {
-        $ranger = new Ranger('en');
-        $ranger
+        $result = (new Ranger('en'))
             ->setRangeSeparator(' and ')
             ->setDateTimeSeparator(', between ')
             ->setDateType(IntlDateFormatter::LONG)
-            ->setTimeType(IntlDateFormatter::SHORT);
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format('2013-10-05 10:00:01', '2013-10-05 13:30:00');
 
-        $formatted = $ranger->format('2013-10-05 10:00:01', '2013-10-05 13:30:00');
         $space = self::get_space();
-        $this->assertEquals('October 5, 2013, between 10:00' . $space . 'AM and 1:30' . $space . 'PM', $formatted);
+        $this->assertEquals('October 5, 2013, between 10:00' . $space . 'AM and 1:30' . $space . 'PM', $result);
     }
 
-    public function testDateTime()
+    /**
+     * @dataProvider providerTypes
+     */
+    #[DataProvider('providerTypes')]
+    public function testTypes($start, $end, $expected)
     {
-        $ranger = new Ranger('en');
-        $start = new DateTime('2013-10-05');
-        $end = new DateTime('2013-10-20');
+        $result = (new Ranger('en'))
+            ->format($start, $end);
 
-        $formatted = $ranger->format($start, $end);
-        $this->assertEquals('Oct 5–20, 2013', $formatted);
+        $this->assertEquals($expected, $result);
     }
 
-    public function testDateTimeImmutable()
+    public static function providerTypes()
     {
-        $ranger = new Ranger('en');
-        $start = new DateTimeImmutable('2013-10-05');
-        $end = new DateTimeImmutable('2013-10-20');
-
-        $formatted = $ranger->format($start, $end);
-        $this->assertEquals('Oct 5–20, 2013', $formatted);
-    }
-
-    public function testTimestamp()
-    {
-        $ranger = new Ranger('en');
-        $formatted = $ranger->format(1380931200, 1382227200);
-        $this->assertEquals('Oct 5–20, 2013', $formatted);
+        return [
+            [new DateTime('2013-10-05'), new DateTime('2013-10-20'), 'Oct 5–20, 2013'],
+            [new DateTimeImmutable('2013-10-05'), new DateTimeImmutable('2013-10-20'), 'Oct 5–20, 2013'],
+            [1380931200, 1382227200, 'Oct 5–20, 2013']
+        ];
     }
 
     public function testTimestampTimezone()
@@ -175,11 +170,12 @@ class RangerTest extends TestCase
         if (!date_default_timezone_set('Europe/Berlin')) {
             $this->markTestSkipped("Couldn't set timezone");
         }
-        $ranger = new Ranger('de');
-        $ranger->setTimeType(IntlDateFormatter::SHORT);
-        $formatted = $ranger->format(1457478001, 1457481600);
+        $result = (new Ranger('de'))
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format(1457478001, 1457481600);
+
         date_default_timezone_set($backup);
-        $this->assertEquals('09.03.2016, 00:00 – 01:00', $formatted);
+        $this->assertEquals('09.03.2016, 00:00 – 01:00', $result);
     }
 
     public function testOffsetTimezone()
@@ -193,12 +189,13 @@ class RangerTest extends TestCase
         $tz = new \DateTimeZone('-0500');
         $start->setTimezone($tz);
         $end->setTimezone($tz);
-        $ranger = new Ranger('en');
-        $ranger->setTimeType(IntlDateFormatter::SHORT);
-        $formatted = $ranger->format($start, $end);
+        $result = (new Ranger('en'))
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format($start, $end);
+
         date_default_timezone_set($backup);
         $space = self::get_space();
-        $this->assertEquals('Oct 4, 2013, 7:00' . $space . 'PM – Oct 19, 2013, 7:00' . $space . 'PM', $formatted);
+        $this->assertEquals('Oct 4, 2013, 7:00' . $space . 'PM – Oct 19, 2013, 7:00' . $space . 'PM', $result);
     }
 
     /**
@@ -207,11 +204,12 @@ class RangerTest extends TestCase
     #[DataProvider('providerNoDate')]
     public function testNoDate($language, $start, $end, $expected)
     {
-        $formatter = new Ranger($language);
-        $formatter
+        $result = (new Ranger($language))
             ->setDateType(IntlDateFormatter::NONE)
-            ->setTimeType(IntlDateFormatter::SHORT);
-        $this->assertEquals($expected, $formatter->format($start, $end));
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format($start, $end);
+
+        $this->assertEquals($expected, $result);
     }
 
     public static function providerNoDate()
@@ -233,13 +231,16 @@ class RangerTest extends TestCase
         // changing formats should not change the stored dates
         $start = new \DateTime('2012-01-10 10:00:00');
         $end = new \DateTime('2012-01-17 11:00:00');
-        $r = new Ranger('en');
-        $r->setDateType(\IntlDateFormatter::NONE);
-        $r->setTimeType(\IntlDateFormatter::SHORT);
-        $r->format($start, $end);
-        $r->setDateType(\IntlDateFormatter::MEDIUM);
-        $r->setTimeType(\IntlDateFormatter::NONE);
-        $formatted = $r->format($start, $end);
+        $ranger = new Ranger('en');
+        $ranger
+            ->setDateType(\IntlDateFormatter::NONE)
+            ->setTimeType(\IntlDateFormatter::SHORT)
+            ->format($start, $end);
+        $formatted = $ranger
+            ->setDateType(\IntlDateFormatter::MEDIUM)
+            ->setTimeType(\IntlDateFormatter::NONE)
+            ->format($start, $end);
+
         $this->assertEquals('Jan 10–17, 2012', $formatted);
     }
 
@@ -248,77 +249,84 @@ class RangerTest extends TestCase
         // checks same as above but a different approach
         $start = new \DateTime('2012-01-10 10:00:00');
         $end = new \DateTime('2012-01-17 11:00:00');
-        $r = new Ranger('en');
-        $r->setDateType(\IntlDateFormatter::MEDIUM);
-        $v1 = $r->format($start, $end);
-        $r->setDateType(\IntlDateFormatter::NONE);
-        $r->format($start, $end);
-        $r->setDateType(\IntlDateFormatter::MEDIUM);
-        $v2 = $r->format($start, $end);
+        $ranger = new Ranger('en');
+        $v1 = $ranger
+            ->setDateType(\IntlDateFormatter::MEDIUM)
+            ->format($start, $end);
+        $ranger
+            ->setDateType(\IntlDateFormatter::NONE)
+            ->format($start, $end);
+        $v2 = $ranger
+            ->setDateType(\IntlDateFormatter::MEDIUM)
+            ->format($start, $end);
+
         $this->assertEquals($v1, $v2);
     }
 
     public function testIssue4()
     {
-        $r = new Ranger('es');
-        $r->setDateType(\IntlDateFormatter::LONG);
-        $result = $r->format('2020-12-03', '2020-12-04');
+        $result = (new Ranger('es'))
+            ->setDateType(\IntlDateFormatter::LONG)
+            ->format('2020-12-03', '2020-12-04');
+
         $this->assertEquals('3 – 4 de diciembre de 2020', $result);
     }
 
     public function testIssue8()
     {
-        $r = new Ranger('de');
-        $r->setTimeType(IntlDateFormatter::SHORT);
-        $result = $r->format('2022-05-04 20:00:00', '2022-05-04 20:00:00');
+        $result = (new Ranger('de'))
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format('2022-05-04 20:00:00', '2022-05-04 20:00:00');
+
         $this->assertEquals('04.05.2022, 20:00', $result);
     }
 
     public function testIssue9()
     {
-        $r = new Ranger('en');
-        $this->assertEquals('Sep 5–12, 2022', $r->format(1662336000, 1662940800));
-        $this->assertEquals('Sep 5–12, 2022', $r->format(1662336000.5, 1662940800.5));
-        $this->assertEquals('Sep 5–12, 2022', $r->format("1662336000", "1662940800"));
-        $this->assertEquals('Sep 5–12, 2022', $r->format("1662336000.5", "1662940800.5"));
+        $ranger = new Ranger('en');
+        $this->assertEquals('Sep 5–12, 2022', $ranger->format(1662336000, 1662940800));
+        $this->assertEquals('Sep 5–12, 2022', $ranger->format(1662336000.5, 1662940800.5));
+        $this->assertEquals('Sep 5–12, 2022', $ranger->format("1662336000", "1662940800"));
+        $this->assertEquals('Sep 5–12, 2022', $ranger->format("1662336000.5", "1662940800.5"));
     }
 
     public function testIssue14()
     {
-        $r = new Ranger('zh_TW');
-        $r
+        $result = (new Ranger('zh_TW'))
             ->setDateType(IntlDateFormatter::MEDIUM)
-            ->setTimeType(IntlDateFormatter::SHORT);
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format(1711738800, 1711738800);
 
         if (version_compare(INTL_ICU_VERSION, '70.1', '<')) {
             $day_period = '下午';
         } else {
             $day_period = '晚上';
         }
-        $this->assertEquals('2024年3月29日, ' . $day_period . '7:00', $r->format(1711738800, 1711738800));
+        $this->assertEquals('2024年3月29日, ' . $day_period . '7:00', $result);
     }
 
     public function testIssue15()
     {
-        $r = new Ranger('zh_TW');
-        $r
+        $result = (new Ranger('zh_TW'))
             ->setDateType(IntlDateFormatter::MEDIUM)
-            ->setTimeType(IntlDateFormatter::SHORT);
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->format(1711738800, 1711828800);
 
         if (version_compare(INTL_ICU_VERSION, '70.1', '<')) {
             $day_period = '下午';
         } else {
             $day_period = '晚上';
         }
-        $this->assertEquals('2024年3月29日, ' . $day_period . '7:00 – 2024年3月30日, ' . $day_period . '8:00', $r->format(1711738800, 1711828800));
+        $this->assertEquals('2024年3月29日, ' . $day_period . '7:00 – 2024年3月30日, ' . $day_period . '8:00', $result);
     }
 
     public function testIssue19()
     {
-        $r = new Ranger('nb');
-        $r
+        $result = (new Ranger('nb'))
             ->setDateType(IntlDateFormatter::LONG)
-            ->setTimeType(IntlDateFormatter::NONE);
-        $this->assertEquals('22.–29. september 2026', $r->format('2026-09-22', '2026-09-29'));
+            ->setTimeType(IntlDateFormatter::NONE)
+            ->format('2026-09-22', '2026-09-29');
+
+        $this->assertEquals('22.–29. september 2026', $result);
     }
 }
