@@ -10,6 +10,8 @@ namespace OpenPsa\Ranger;
 use IntlDateFormatter;
 use DateTime;
 use DateTimeImmutable;
+use IntlDatePatternGenerator;
+use RuntimeException;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -115,6 +117,67 @@ class RangerTest extends TestCase
             ['de', '2012-10-05 00:00:01', '2012-10-05 23:59:59', '05.10.12'],
             ['de', '2012-10-05', '2013-10-20', '05.10.12 – 20.10.13']
         ];
+    }
+
+    /**
+     * @dataProvider providerPrecision
+     */
+    #[DataProvider('providerPrecision')]
+    public function testPrecision($language, $date_type, $precision, $start, $end, $expected)
+    {
+        if (!class_exists(IntlDatePatternGenerator::class)) {
+            $this->expectException(RuntimeException::class);
+        }
+        $ranger = (new Ranger($language))
+            ->setDateType($date_type)
+            ->setPrecision($precision);
+
+        $this->assertEquals($expected, $ranger->format($start, $end));
+    }
+
+    public static function providerPrecision()
+    {
+        return [
+            ['en', IntlDateFormatter::MEDIUM, Ranger::MONTH, '2020-01-08', '2020-10-26', 'Jan – Oct 2020'],
+            ['en', IntlDateFormatter::MEDIUM, Ranger::MONTH, '2020-10-08', '2020-10-26', 'Oct 2020'],
+            ['en', IntlDateFormatter::MEDIUM, Ranger::MONTH, '2019-09-01', '2020-05-01', 'Sep 2019 – May 2020'],
+            ['en', IntlDateFormatter::MEDIUM, Ranger::YEAR, '2015-03-01', '2020-06-01', '2015–2020'],
+            ['en', IntlDateFormatter::MEDIUM, Ranger::YEAR, '2020-01-08', '2020-10-26', '2020'],
+            ['en', IntlDateFormatter::FULL, Ranger::MONTH, '2020-01-08', '2020-10-26', 'January – October 2020'],
+            ['de', IntlDateFormatter::LONG, Ranger::MONTH, '2020-01-08', '2020-10-26', 'Januar – Oktober 2020'],
+            ['de', IntlDateFormatter::LONG, Ranger::MONTH, '2019-09-01', '2020-05-01', 'September 2019 – Mai 2020'],
+            ['de', IntlDateFormatter::LONG, Ranger::QUARTER, '2019-09-01', '2020-05-01', 'Q3 2019 – Q2 2020'],
+            ['de', IntlDateFormatter::LONG, Ranger::QUARTER, '2020-01-08', '2020-10-26', 'Q1 – Q4 2020'],
+            ['en', IntlDateFormatter::MEDIUM, Ranger::QUARTER, '2020-07-01', '2020-09-30', 'Q3 2020'],
+            ['de', IntlDateFormatter::MEDIUM, Ranger::YEAR, '2015-03-01', '2020-06-01', '2015–2020'],
+        ];
+    }
+
+    public function testPrecisionWithTime()
+    {
+        if (!class_exists(IntlDatePatternGenerator::class)) {
+            $this->expectException(RuntimeException::class);
+        }
+        $result = (new Ranger('en'))
+            ->setTimeType(IntlDateFormatter::SHORT)
+            ->setPrecision(Ranger::DAY)
+            ->format('2020-10-05 10:15:00', '2020-10-07 13:30:00');
+
+        $this->assertEquals('Oct 5–7, 2020', $result);
+    }
+
+    public function testResetPrecision()
+    {
+        if (!class_exists(IntlDatePatternGenerator::class)) {
+            $this->expectException(RuntimeException::class);
+        }
+        $ranger = (new Ranger('en'))
+            ->setPrecision(Ranger::YEAR);
+
+        $this->assertEquals('2013', $ranger->format('2013-10-05', '2013-10-20'));
+
+        $ranger->setPrecision(null);
+        $this->assertEquals('Oct 5–20, 2013', $ranger->format('2013-10-05', '2013-10-20'));
     }
 
     public function testCustomOptions()
