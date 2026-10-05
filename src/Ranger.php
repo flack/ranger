@@ -505,8 +505,9 @@ class Ranger
             }
         }
         if ($this->max_precision === self::QUARTER && $has_month) {
-            // locale patterns don't contain quarters, so show them instead of the month
-            $skeleton .= 'Q';
+            // locale patterns don't contain quarters, so show them instead of the month.
+            // The width is explicit because older ICU versions render a single Q as numeric
+            $skeleton .= 'QQQ';
         }
         if ($skeleton === '') {
             return '';
